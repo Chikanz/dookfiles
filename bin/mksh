@@ -20,4 +20,5 @@ set -o pipefail
 
 chmod u+x "$1"
 
-"$EDITOR" "$1"
+# Use EDITOR if set, otherwise fallback to nano
+"${EDITOR:-nano}" "$1"

@@ -1,0 +1,104 @@
+# Script descriptions (format: script_name:description)
+alphabet:Prints all the letters in the alphabet
+halp:List all scripts or show description for a specific script
+bb:Quick access to frequently used commands
+bytedump:Display file contents in hexadecimal format
+catbin:Display binary file contents
+clock:Display a terminal clock
+cls:Clear the terminal screen
+copy:Copy text to clipboard
+cptmp:Copy file to temporary directory
+cpwd:Copy current working directory to clipboard
+csv2md:Convert CSV files to Markdown tables
+dateseq:Generate a sequence of dates
+datesort:Sort files by date
+ds-destroy:Destroy and remove Docker containers
+duck:DuckDuckGo search from terminal
+duckl:DuckDuckGo "I'm Feeling Ducky" search
+each:Execute command for each line of input
+emoji:Search and copy emoji
+extensions:List file extensions in directory
+extract:Extract compressed files (zip, tar, etc.)
+f:Quick file finder
+ffmpeg-smallest:Compress video to smallest size with ffmpeg
+flushdns:Flush DNS cache
+g:Quick grep wrapper
+getpod:Get podcast episode
+getsong:Download song from URL
+getsubs:Download subtitles for video
+git-find:Search git repositories
+git-fzf-checkout:Checkout git branch with fzf
+git-push-all:Push all git repositories
+hoy:Display today's date in Spanish
+httpstatus:Look up HTTP status code meanings
+iclj:Interactive Clojure REPL
+icr:Interactive Crystal REPL
+ijs:Interactive JavaScript REPL
+iphp:Interactive PHP REPL
+ipy:Interactive Python REPL
+isql:Interactive SQL REPL
+jsonformat:Format JSON with proper indentation
+l:List files (ls shortcut)
+la:List all files including hidden
+length:Count characters in input
+line:Extract specific line from input
+list-colors:Display terminal color palette
+lowered:Convert text to lowercase
+markdownquote:Convert text to Markdown blockquote
+math:Command-line calculator
+mergepdfs:Merge multiple PDF files
+mksh:Create and make shell script executable
+movs2mp4s:Convert MOV files to MP4
+murder:Kill process by name
+myip:Display your public IP address
+nagd:Nag daemon for reminders
+nato:Convert text to NATO phonetic alphabet
+note:Quick note-taking utility
+note-archive:Archive old notes
+notify:Send desktop notification
+npm-repack:Reinstall npm packages
+npm-unused:Find unused npm packages
+npm-update-dependencies:Update npm dependencies
+npm-update-dev-dependencies:Update npm dev dependencies
+ocr:Extract text from image using OCR
+pasta:Paste manager - save clipboard history
+pastas:View and select from pasta history
+pingbing:Ping Bing to check internet connectivity
+pingen:Generate random ping sound
+pix:Image viewer/converter
+prettypath:Display PATH variable nicely formatted
+qtas2m4as:Convert QTA audio to M4A
+radio:Stream internet radio stations
+removeexif:Remove EXIF data from images
+repo-sync:Sync all git repositories
+rn:Rename files with pattern
+running:Show running processes
+scratch:Open scratch file for temporary notes
+serveit:Start simple HTTP server
+sfx:Play sound effects
+shrinkvid:Shrink video file size
+sleepybear:Put computer to sleep after delay
+snippet:Code snippet manager
+snippets:View and select code snippets
+speak:Text-to-speech from terminal
+stopwatch:Terminal stopwatch
+straightquote:Convert curly quotes to straight quotes
+theme:Change terminal theme
+timer:Countdown timer
+transcribe:Transcribe audio to text
+trash:Move files to trash (safe delete)
+treefind:Find files and display in tree format
+tryna:Try a command, continue on failure
+trynafail:Try a command, expect it to fail
+tuivid:Terminal UI video player
+tunes:Control music player from terminal
+u+:Look up Unicode character
+uppered:Convert text to uppercase
+upup:Go up multiple directory levels
+url:URL shortener/expander
+url2md:Convert URL to Markdown link
+uuid:Generate UUID
+view:Quick file viewer
+vimplug:Manage vim plugins
+waitfor:Wait for command to succeed
+wifi:Manage WiFi connections

@@ -1,24 +1,46 @@
-echo "Waddup son"
+# Display random script fact on login
+function random_script_fact() {
+  local descriptions_file="$HOME/.dotfiles/zsh/.bin-descriptions"
+  if [[ -f "$descriptions_file" ]]; then
+    # Get all non-comment, non-empty lines
+    local facts=($(grep -v '^#' "$descriptions_file" | grep -v '^$'))
+    if [[ ${#facts[@]} -gt 0 ]]; then
+      # Select random fact
+      local random_fact=${facts[$RANDOM % ${#facts[@]}]}
+      # Split on : and format nicely
+      local script_name="${random_fact%%:*}"
+      local description="${random_fact#*:}"
+      echo "💡 \033[1;36m$script_name\033[0m - $description"
+    fi
+  fi
+}
+
+random_script_fact
 # source /Users/dook/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10   k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
 # If you come from bash you might have to change your $PATH.
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 
-# GNU utilities (prioritize GNU versions over macOS defaults)
-export PATH="$(brew --prefix coreutils)/libexec/gnubin:$PATH"
-export PATH="$(brew --prefix grep)/libexec/gnubin:$PATH"
-export PATH="$(brew --prefix gnu-sed)/libexec/gnubin:$PATH"
-export PATH="$(brew --prefix gnu-tar)/libexec/gnubin:$PATH"
-export PATH="$(brew --prefix gnu-which)/libexec/gnubin:$PATH"
-export PATH="$(brew --prefix gawk)/libexec/gnubin:$PATH"
-export PATH="$(brew --prefix findutils)/libexec/gnubin:$PATH"
+# macOS: Cache brew prefix for performance (avoid calling brew --prefix multiple times)
+if [[ "$OSTYPE" == "darwin"* ]] && command -v brew &> /dev/null; then
+  BREW_PREFIX="$(brew --prefix)"
+
+  # GNU utilities (prioritize GNU versions over macOS defaults)
+  export PATH="$BREW_PREFIX/opt/coreutils/libexec/gnubin:$PATH"
+  export PATH="$BREW_PREFIX/opt/grep/libexec/gnubin:$PATH"
+  export PATH="$BREW_PREFIX/opt/gnu-sed/libexec/gnubin:$PATH"
+  export PATH="$BREW_PREFIX/opt/gnu-tar/libexec/gnubin:$PATH"
+  export PATH="$BREW_PREFIX/opt/gnu-which/libexec/gnubin:$PATH"
+  export PATH="$BREW_PREFIX/opt/gawk/libexec/gnubin:$PATH"
+  export PATH="$BREW_PREFIX/opt/findutils/libexec/gnubin:$PATH"
+fi
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -48,7 +70,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # zstyle ':omz:update' mode reminder  # just remind me to update when it's time
 
 # Uncomment the following line to change how often to auto-update (in days).
-# zstyle ':omz:update' frequency 13
+zstyle ':omz:update' frequency 30
 
 # Uncomment the following line if pasting URLs and other text is messed up.
 # DISABLE_MAGIC_FUNCTIONS="true"
@@ -60,13 +82,13 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # DISABLE_AUTO_TITLE="true"
 
 # Uncomment the following line to enable command auto-correction.
-# ENABLE_CORRECTION="true"
+ENABLE_CORRECTION="true"
 
 # Uncomment the following line to display red dots whilst waiting for completion.
 # You can also set it to another string to have that shown instead of the default red dots.
 # e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
 # Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
-# COMPLETION_WAITING_DOTS="true"
+COMPLETION_WAITING_DOTS="true"
 
 # Uncomment the following line if you want to disable marking untracked files
 # under VCS as dirty. This makes repository status check for large repositories
@@ -101,11 +123,8 @@ source $ZSH/oh-my-zsh.sh
 # export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
+export EDITOR="${EDITOR:-nano}"
+export VISUAL="${VISUAL:-$EDITOR}"
 
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
@@ -128,43 +147,43 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-#test -e "${HOME}/.iterm2_shell_integration.zsh" && source 
-"${HOME}/.iterm2_shell_integration.zsh"
-
-export python=/opt/homebrew/bin/python3.10
+# iTerm2 shell integration (if installed)
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
 eval "$(zoxide init --cmd cd zsh)"
-export DENO_INSTALL="/Users/dook/.deno"
+export DENO_INSTALL="$HOME/.deno"
 export PATH="$DENO_INSTALL/bin:$PATH"
 
 # Created by `pipx` on 2024-07-24 13:01:28
-export PATH="$PATH:/Users/dook/.local/bin"
+export PATH="$PATH:$HOME/.local/bin"
 
 # bun completions
-[ -s "/Users/dook/.bun/_bun" ] && source "/Users/dook/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-#psql
-export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
+# Deno environment (if installed)
+[ -f "$HOME/.deno/env" ] && . "$HOME/.deno/env"
 
-# webstorm
-alias wstorm="open -na "WebStorm.app" --args "$@""
-
-. "/Users/dook/.deno/env"
 # Initialize zsh completions (added by deno install script)
 autoload -Uz compinit
 compinit
 
-alias psql=/opt/homebrew/opt/postgresql@17/bin/psql
-alias pg_dump=/opt/homebrew/opt/postgresql@17/bin/pg_dump
-alias pg_restore=/opt/homebrew/opt/postgresql@17/bin/pg_restore
-export PATH="/opt/homebrew/opt/mongodb-community@4.4/bin:$PATH"
-export PATH="$HOME/dotfiles/bin/bin:$PATH"
-alias halp="ls $HOME/dotfiles/bin/bin"
-
-
+# Update settings
 UPDATE_ZSH_DAYS=30
 DISABLE_UPDATE_PROMPT=true
+
+# macOS-specific aliases
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  alias wstorm='open -na "WebStorm.app" --args "$@"'
+fi
+
+# Machine-specific configuration (not tracked in git)
+# Create ~/.zshrc.local for machine-specific settings like:
+#   - Custom PATH additions (e.g., postgresql, mongodb, python versions)
+#   - Machine-specific aliases (e.g., IDE launchers)
+#   - Environment variables that differ per machine
+# See ~/.dotfiles/zsh/.zshrc.local.example for examples
+[ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"

@@ -91,6 +91,15 @@ else
     print_success "zsh-autosuggestions plugin already installed"
 fi
 
+# Install zsh-fzf-history-search as Oh My Zsh plugin
+if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-fzf-history-search" ]; then
+    print_info "Installing zsh-fzf-history-search plugin for Oh My Zsh..."
+    git clone https://github.com/joshskidmore/zsh-fzf-history-search ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-fzf-history-search
+    print_success "zsh-fzf-history-search plugin installed"
+else
+    print_success "zsh-fzf-history-search plugin already installed"
+fi
+
 
 # Backup existing dotfiles
 print_info "Backing up existing dotfiles..."
@@ -127,7 +136,7 @@ cd "$DOTFILES_DIR"
 PACKAGES=()
 for dir in "$DOTFILES_DIR"/*/; do
     dirname=$(basename "$dir")
-    # Skip hidden directories, .git, .idea, and other non-package directories
+    # Skip hidden directories like .git, .idea
     if [[ ! "$dirname" =~ ^\. ]]; then
         PACKAGES+=("$dirname")
     fi
@@ -160,12 +169,18 @@ fi
 # Install fzf key bindings and fuzzy completion
 if command -v fzf &> /dev/null; then
     print_info "Installing fzf key bindings and completion..."
-    if [[ "$IS_MAC" == true ]]; then
-        "$(brew --prefix)"/opt/fzf/install --key-bindings --completion --no-update-rc
+    if command -v brew &> /dev/null; then
+        # Use brew to find fzf installation path (works on macOS and Linux)
+        FZF_INSTALL_PATH="$(brew --prefix fzf)/install"
+        if [[ -f "$FZF_INSTALL_PATH" ]]; then
+            "$FZF_INSTALL_PATH" --key-bindings --completion --no-update-rc
+            print_success "fzf key bindings and completion installed"
+        else
+            print_warning "fzf install script not found at $FZF_INSTALL_PATH"
+        fi
     else
-        /usr/bin/fzf/install --key-bindings --completion --no-update-rc
+        print_warning "Homebrew not found, skipping fzf setup"
     fi
-    print_success "fzf key bindings and completion installed"
 fi
 
 # Final instructions

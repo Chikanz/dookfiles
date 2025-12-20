@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+# halp - Helper to list available custom scripts in ~/bin or show description
+
+if [[ $# -eq 0 ]]; then
+  # No arguments: list all scripts
+  ls "$HOME/bin"
+else
+  # Argument provided: show description
+  script_name="$1"
+  descriptions_file="$HOME/.dotfiles/zsh/.bin-descriptions"
+
+  if [[ ! -f "$descriptions_file" ]]; then
+    echo "Description file not found: $descriptions_file"
+    exit 1
+  fi
+
+  # Search for the script description
+  description=$(grep "^${script_name}:" "$descriptions_file" | cut -d':' -f2-)
+
+  if [[ -n "$description" ]]; then
+    echo -e "\033[1;36m$script_name\033[0m -$description"
+  else
+    echo "No description found for: $script_name"
+    # Check if script exists in bin
+    if [[ -f "$HOME/bin/$script_name" ]]; then
+      echo "(Script exists but has no description in .bin-descriptions)"
+    else
+      echo "(Script not found in ~/bin)"
+    fi
+  fi
+fi

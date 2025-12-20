@@ -17,14 +17,27 @@ This repository uses GNU Stow to manage dotfiles. Each subdirectory is a "packag
 
 ### Prerequisites
 
-Install GNU Stow:
+Install Homebrew (if not already installed):
 ```bash
-# macOS
-brew install stow
-
-# Ubuntu/Debian
-sudo apt install stow
+# macOS and Linux
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
+
+### Install Dependencies
+
+Install all required dependencies using the Brewfile:
+```bash
+cd ~/.dotfiles
+brew bundle
+```
+
+This will install:
+- Shell tools (zsh, bash, zsh-autosuggestions, powerlevel10k)
+- Navigation tools (fzf, zoxide)
+- Development tools (git, stow, vim, wget)
+- Programming languages (python, node, deno, bun)
+- Package managers (nvm, pipx)
+- Databases (postgresql@17)
 
 ### Setup on a new machine
 

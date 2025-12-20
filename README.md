@@ -15,7 +15,34 @@ This repository uses GNU Stow to manage dotfiles. Each subdirectory is a "packag
 
 ## Installation
 
-### Prerequisites
+### Quick Start (Recommended)
+
+For a fresh machine, use the automated bootstrap script:
+
+```bash
+# Clone this repository
+git clone <your-repo-url> ~/.dotfiles
+
+# Run the bootstrap script
+cd ~/.dotfiles
+./bootstrap.sh
+```
+
+The bootstrap script will:
+- Install Homebrew (if not installed)
+- Install all Brewfile dependencies
+- Install Oh My Zsh
+- Install Powerlevel10k theme
+- Install zsh-autosuggestions plugin
+- Install NVM (Node Version Manager)
+- Install Deno
+- Backup existing dotfiles
+- Setup stow for all packages
+- Set Zsh as default shell
+
+### Manual Installation
+
+#### Prerequisites
 
 Install Homebrew (if not already installed):
 ```bash
@@ -23,7 +50,7 @@ Install Homebrew (if not already installed):
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-### Install Dependencies
+#### Install Dependencies
 
 Install all required dependencies using the Brewfile:
 ```bash
@@ -32,14 +59,30 @@ brew bundle
 ```
 
 This will install:
-- Shell tools (zsh, bash, zsh-autosuggestions, powerlevel10k)
+- Shell tools (zsh, zsh-autosuggestions, powerlevel10k)
 - Navigation tools (fzf, zoxide)
-- Development tools (git, stow, vim, wget)
-- Programming languages (python, node, deno, bun)
-- Package managers (nvm, pipx)
-- Databases (postgresql@17)
+- Development tools (stow)
+- Programming languages (bun)
 
-### Setup on a new machine
+#### Install Oh My Zsh
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+```
+
+#### Install Powerlevel10k theme
+
+```bash
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+```
+
+#### Install zsh-autosuggestions plugin
+
+```bash
+git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+```
+
+#### Setup on a new machine
 
 1. Clone this repository:
 ```bash

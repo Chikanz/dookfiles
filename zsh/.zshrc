@@ -11,6 +11,15 @@ fi
 # If you come from bash you might have to change your $PATH.
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 
+# GNU utilities (prioritize GNU versions over macOS defaults)
+export PATH="$(brew --prefix coreutils)/libexec/gnubin:$PATH"
+export PATH="$(brew --prefix grep)/libexec/gnubin:$PATH"
+export PATH="$(brew --prefix gnu-sed)/libexec/gnubin:$PATH"
+export PATH="$(brew --prefix gnu-tar)/libexec/gnubin:$PATH"
+export PATH="$(brew --prefix gnu-which)/libexec/gnubin:$PATH"
+export PATH="$(brew --prefix gawk)/libexec/gnubin:$PATH"
+export PATH="$(brew --prefix findutils)/libexec/gnubin:$PATH"
+
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
@@ -80,7 +89,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git zsh-autosuggestions)
+plugins=(git zsh-autosuggestions zsh-fzf-history-search)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -122,8 +131,6 @@ export NVM_DIR="$HOME/.nvm"
 #test -e "${HOME}/.iterm2_shell_integration.zsh" && source 
 "${HOME}/.iterm2_shell_integration.zsh"
 
-alias dot='/usr/bin/git --git-dir=./dotfiles --work-tree=/Users/dook'
-
 export python=/opt/homebrew/bin/python3.10
 
 eval "$(zoxide init --cmd cd zsh)"
@@ -146,10 +153,18 @@ export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
 # webstorm
 alias wstorm="open -na "WebStorm.app" --args "$@""
 
-# history
-#export HISTFILE=~/.zsh_history_$(tty | sed 's/[^a-zA-Z0-9]/_/g')
-#export HISTSIZE=1000
-#export SAVEHIST=1000
+. "/Users/dook/.deno/env"
+# Initialize zsh completions (added by deno install script)
+autoload -Uz compinit
+compinit
+
+alias psql=/opt/homebrew/opt/postgresql@17/bin/psql
+alias pg_dump=/opt/homebrew/opt/postgresql@17/bin/pg_dump
+alias pg_restore=/opt/homebrew/opt/postgresql@17/bin/pg_restore
+export PATH="/opt/homebrew/opt/mongodb-community@4.4/bin:$PATH"
+export PATH="$HOME/dotfiles/bin/bin:$PATH"
+alias halp="ls $HOME/dotfiles/bin/bin"
+
 
 UPDATE_ZSH_DAYS=30
 DISABLE_UPDATE_PROMPT=true

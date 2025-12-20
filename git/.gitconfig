@@ -1,0 +1,5 @@
+[user]
+	name = Zac Lucarelli
+	email = chikanz@outlook.com
+[core]
+	excludesfile = /Users/dook/.gitignore_global

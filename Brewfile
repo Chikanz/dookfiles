@@ -1,9 +1,6 @@
 # Brewfile for dotfiles dependencies
 # Install with: brew bundle --file=~/.dotfiles/Brewfile
 
-# Taps
-tap "homebrew/bundle"
-
 # Shell
 brew "zsh"                              # Z shell
 
@@ -28,7 +25,11 @@ brew "zoxide"                           # Smarter cd command
 brew "stow"                             # Symlink farm manager for dotfiles
 
 # Programming languages & runtimes
-brew "bun"                              # Bun JavaScript runtime
+# Note: Bun is only available via Homebrew on macOS
+# On Linux, install via: curl -fsSL https://bun.sh/install | bash
+if OS.mac?
+  brew "oven-sh/bun/bun"                # Bun JavaScript runtime
+end
 
 # macOS-specific applications (casks)
 # These will be skipped on Linux systems

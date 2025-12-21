@@ -44,9 +44,11 @@ if ! command -v brew &> /dev/null; then
     print_info "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-    # Add Homebrew to PATH for Apple Silicon Macs
+    # Add Homebrew to PATH for current session
     if [[ "$IS_MAC" == true && -d "/opt/homebrew" ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ "$IS_MAC" == false && -d "/home/linuxbrew/.linuxbrew" ]]; then
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
     fi
 
     print_success "Homebrew installed"
@@ -83,18 +85,18 @@ else
 fi
 
 # Install zsh-autosuggestions as Oh My Zsh plugin
-if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
+if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
     print_info "Installing zsh-autosuggestions plugin for Oh My Zsh..."
-    git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+    git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
     print_success "zsh-autosuggestions plugin installed"
 else
     print_success "zsh-autosuggestions plugin already installed"
 fi
 
 # Install zsh-fzf-history-search as Oh My Zsh plugin
-if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-fzf-history-search" ]; then
+if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-fzf-history-search" ]; then
     print_info "Installing zsh-fzf-history-search plugin for Oh My Zsh..."
-    git clone https://github.com/joshskidmore/zsh-fzf-history-search ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-fzf-history-search
+    git clone https://github.com/joshskidmore/zsh-fzf-history-search ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-fzf-history-search
     print_success "zsh-fzf-history-search plugin installed"
 else
     print_success "zsh-fzf-history-search plugin already installed"
@@ -153,12 +155,10 @@ print_success "All packages stowed successfully"
 # Set Zsh as default shell if not already
 if [ "$SHELL" != "$(which zsh)" ]; then
     print_info "Setting Zsh as default shell..."
-    if [[ "$IS_MAC" == true ]]; then
-        # Add Homebrew zsh to allowed shells if not present
-        if ! grep -q "$(which zsh)" /etc/shells; then
-            print_warning "Adding Homebrew zsh to /etc/shells (requires sudo)"
-            echo "$(which zsh)" | sudo tee -a /etc/shells
-        fi
+    # Add Homebrew zsh to allowed shells if not present
+    if ! grep -q "$(which zsh)" /etc/shells; then
+        print_warning "Adding Homebrew zsh to /etc/shells (requires sudo)"
+        echo "$(which zsh)" | sudo tee -a /etc/shells
     fi
     chsh -s "$(which zsh)"
     print_success "Zsh set as default shell"

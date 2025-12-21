@@ -148,12 +148,8 @@ export VISUAL="${VISUAL:-$EDITOR}"
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Lazy load nvm to speed up startup time:
-export NVM_DIR="$HOME/.nvm"
-nvm() {
-  unset -f nvm
-  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-  nvm "$@"
-}
+export NVM_LAZY_LOAD=true
+source "${HOME}/.zsh-nvm.plugin.zsh"
 
 # iTerm2 shell integration (if installed)
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"

@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# Usage: ./convertall <source_extension> <target_extension>
+
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <source_extension> <target_extension>"
+    echo "Example: $0 HEIC png"
+    exit 1
+fi
+
+SOURCE_EXT="$1"
+TARGET_EXT="$2"
+
+# Remove leading dots if provided
+SOURCE_EXT="${SOURCE_EXT#.}"
+TARGET_EXT="${TARGET_EXT#.}"
+
+# Count files (case-insensitive)
+file_count=$(find . -maxdepth 1 -type f -iname "*.${SOURCE_EXT}" | wc -l | tr -d ' ')
+
+if [ "$file_count" -eq 0 ]; then
+    echo "No .${SOURCE_EXT} files found in current directory"
+    exit 0
+fi
+
+echo "Found $file_count .${SOURCE_EXT} file(s)"
+echo "Converting to .${TARGET_EXT}..."
+echo ""
+
+converted=0
+failed=0
+
+# Use find to get files case-insensitively
+while IFS= read -r -d '' file; do
+    # Get filename without extension
+    basename="${file%.*}"
+    target="${basename}.${TARGET_EXT}"
+
+    echo "Converting: $file -> $target"
+
+    # Try magick (ImageMagick 7) first, fall back to convert (ImageMagick 6), then ffmpeg
+    if command -v magick &> /dev/null; then
+        magick "$file" "$target" 2>/dev/null && ((converted++)) || ((failed++))
+    elif command -v convert &> /dev/null; then
+        convert "$file" "$target" 2>/dev/null && ((converted++)) || ((failed++))
+    elif command -v ffmpeg &> /dev/null; then
+        ffmpeg -i "$file" "$target" -loglevel error -y 2>/dev/null && ((converted++)) || ((failed++))
+    else
+        echo "Error: Neither ImageMagick nor ffmpeg found. Install one of them first."
+        echo "  macOS: brew install imagemagick  or  brew install ffmpeg"
+        exit 1
+    fi
+done < <(find . -maxdepth 1 -type f -iname "*.${SOURCE_EXT}" -print0)
+
+echo ""
+echo "Conversion complete!"
+echo "Converted: $converted"
+echo "Failed: $failed"

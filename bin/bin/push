@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -e
+set -u
+set -o pipefail
+
+if [ $# -ne 2 ]; then
+	echo "Usage: push <local-directory> <user@host>" >&2
+	echo "Uploads from local to remote home directory" >&2
+	exit 1
+fi
+
+local_dir="$1"
+ssh_server="$2"
+
+exec scp -r "${local_dir}" "${ssh_server}:~/"

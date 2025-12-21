@@ -8,7 +8,7 @@ if [[ $# -eq 0 ]]; then
 else
   # Argument provided: show description
   script_name="$1"
-  descriptions_file="$HOME/.dotfiles/zsh/.bin-descriptions"
+  descriptions_file="$HOME/dookfiles/zsh/.bin-descriptions"
 
   if [[ ! -f "$descriptions_file" ]]; then
     echo "Description file not found: $descriptions_file"

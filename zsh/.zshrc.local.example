@@ -9,6 +9,53 @@
 #
 
 # ------------------------------------------------------------------------------
+# Terminal Colors by Hostname
+# ------------------------------------------------------------------------------
+# Different visual indicators based on which machine you're on
+
+# Option 1: iTerm2 badge (macOS only) - Shows hostname in corner
+# if [[ "$TERM_PROGRAM" == "iTerm.app" ]]; then
+#   echo -e "\033]1337;SetBadgeFormat=$(echo -n "$(hostname -s)" | base64)\a"
+# fi
+
+# Option 2: Set terminal tab color via escape codes (iTerm2, some other terminals)
+# case "$(hostname -s)" in
+#   production-server)
+#     echo -ne "\033]6;1;bg;red;brightness;255\a"    # Red tab
+#     echo -ne "\033]6;1;bg;green;brightness;0\a"
+#     echo -ne "\033]6;1;bg;blue;brightness;0\a"
+#     ;;
+#   dookbox)
+#     echo -ne "\033]6;1;bg;red;brightness;0\a"      # Blue tab
+#     echo -ne "\033]6;1;bg;green;brightness;150\a"
+#     echo -ne "\033]6;1;bg;blue;brightness;255\a"
+#     ;;
+# esac
+
+# Option 3: Custom Powerlevel10k prompt cursor per machine
+# Note: This must be set BEFORE p10k is initialized
+# case "$(hostname -s)" in
+#   dookbox)
+#     # Change cursor symbol and color on Linux box
+#     typeset -g POWERLEVEL9K_PROMPT_CHAR_{OK,ERROR}_VIINS_CONTENT_EXPANSION='⚡'
+#     typeset -g POWERLEVEL9K_PROMPT_CHAR_OK_{VIINS,VICMD,VIVIS,VIOWR}_FOREGROUND=33  # Blue
+#     ;;
+#   macbook)
+#     # Different cursor for macOS
+#     typeset -g POWERLEVEL9K_PROMPT_CHAR_{OK,ERROR}_VIINS_CONTENT_EXPANSION='➜'
+#     typeset -g POWERLEVEL9K_PROMPT_CHAR_OK_{VIINS,VICMD,VIVIS,VIOWR}_FOREGROUND=76  # Green
+#     ;;
+# esac
+
+# Option 4: Custom Powerlevel10k colors per machine (other elements)
+# case "$(hostname -s)" in
+#   dookbox)
+#     POWERLEVEL9K_DIR_BACKGROUND='blue'
+#     POWERLEVEL9K_DIR_FOREGROUND='white'
+#     ;;
+# esac
+
+# ------------------------------------------------------------------------------
 # Python Version (if you have a specific version installed)
 # ------------------------------------------------------------------------------
 # export python=/opt/homebrew/bin/python3.10

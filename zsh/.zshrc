@@ -1,9 +1,13 @@
 # Display random script fact on login
 function random_script_fact() {
-  local descriptions_file="$HOME/.dotfiles/zsh/.bin-descriptions"
+  local descriptions_file="$HOME/dookfiles/zsh/.bin-descriptions"
   if [[ -f "$descriptions_file" ]]; then
-    # Get all non-comment, non-empty lines
-    local facts=($(grep -v '^#' "$descriptions_file" | grep -v '^$'))
+    # Get all non-comment, non-empty lines into an array
+    local facts=()
+    while IFS= read -r line; do
+      facts+=("$line")
+    done < <(grep -v '^#' "$descriptions_file" | grep -v '^$')
+
     if [[ ${#facts[@]} -gt 0 ]]; then
       # Select random fact
       local random_fact=${facts[$RANDOM % ${#facts[@]}]}

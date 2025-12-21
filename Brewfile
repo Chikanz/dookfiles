@@ -1,8 +1,10 @@
 # Brewfile for dotfiles dependencies
 # Install with: brew bundle --file=~/.dotfiles/Brewfile
 
-# Shell
-brew "zsh"                              # Z shell
+# Shell (macOS comes with zsh, but Linux needs it)
+unless OS.mac?
+  brew "zsh"                            # Z shell
+end
 
 # Shell enhancements
 brew "zsh-autosuggestions"              # Fish-like autosuggestions for zsh
@@ -20,6 +22,9 @@ brew "findutils"                        # GNU find, xargs, locate
 
 # Navigation & search
 brew "zoxide"                           # Smarter cd command
+
+# Media
+brew "mpv"                              # Media player
 
 # Version control
 brew "stow"                             # Symlink farm manager for dotfiles

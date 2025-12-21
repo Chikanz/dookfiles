@@ -147,9 +147,13 @@ export VISUAL="${VISUAL:-$EDITOR}"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
+# Lazy load nvm to speed up startup time:
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+nvm() {
+  unset -f nvm
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+  nvm "$@"
+}
 
 # iTerm2 shell integration (if installed)
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
@@ -172,8 +176,13 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 [ -f "$HOME/.deno/env" ] && . "$HOME/.deno/env"
 
 # Initialize zsh completions (added by deno install script)
+# Only regenerate compdump once a day for faster startup
 autoload -Uz compinit
-compinit
+if [[ -n ${HOME}/.zcompdump(#qN.mh+24) ]]; then
+  compinit
+else
+  compinit -C  # Skip security checks (faster)
+fi
 
 # Update settings
 UPDATE_ZSH_DAYS=30

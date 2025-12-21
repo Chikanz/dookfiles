@@ -109,7 +109,7 @@ BACKUP_DIR="$HOME/.dotfiles_backup_$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$BACKUP_DIR"
 
 # List of files that might conflict
-DOTFILES=(".zshrc" ".zshenv" ".zprofile" ".p10k.zsh" ".bashrc" ".gitconfig" ".gitignore_global" ".fzf.zsh" ".fzf.bash" ".iterm2_shell_integration.zsh")
+DOTFILES=(".zshrc" ".zshenv" ".zprofile" ".p10k.zsh" ".bashrc" ".gitconfig" ".gitignore_global" ".fzf.zsh" ".fzf.bash" ".iterm2_shell_integration.zsh" ".hushlogin")
 
 for file in "${DOTFILES[@]}"; do
     if [ -f "$HOME/$file" ] && [ ! -L "$HOME/$file" ]; then
@@ -152,18 +152,22 @@ done
 
 print_success "All packages stowed successfully"
 
-# Set Zsh as default shell if not already
-if [ "$SHELL" != "$(which zsh)" ]; then
-    print_info "Setting Zsh as default shell..."
-    # Add Homebrew zsh to allowed shells if not present
-    if ! grep -q "$(which zsh)" /etc/shells; then
-        print_warning "Adding Homebrew zsh to /etc/shells (requires sudo)"
-        echo "$(which zsh)" | sudo tee -a /etc/shells
+# Set Zsh as default shell (only needed on Linux, macOS comes with zsh)
+if [[ "$IS_MAC" == false ]]; then
+    if [ "$SHELL" != "$(which zsh)" ]; then
+        print_info "Setting Zsh as default shell..."
+        # Add Homebrew zsh to allowed shells if not present
+        if ! grep -q "$(which zsh)" /etc/shells; then
+            print_warning "Adding Homebrew zsh to /etc/shells (requires sudo)"
+            echo "$(which zsh)" | sudo tee -a /etc/shells
+        fi
+        chsh -s "$(which zsh)"
+        print_success "Zsh set as default shell"
+    else
+        print_success "Zsh already set as default shell"
     fi
-    chsh -s "$(which zsh)"
-    print_success "Zsh set as default shell"
 else
-    print_success "Zsh already set as default shell"
+    print_success "Using macOS system zsh"
 fi
 
 # Install fzf key bindings and fuzzy completion

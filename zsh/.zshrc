@@ -189,6 +189,21 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   alias wstorm='open -na "WebStorm.app" --args "$@"'
 fi
 
+alias ,,='cd ..'
+alias ..l='cd .. && ls'
+alias :q='exit'
+alias cd..='cd ..'
+alias mdkir='mkdir'
+alias dc='cd'
+alias sl='ls'
+alias sudp='sudo'
+
+mkcd () {
+  \mkdir -p "$1"
+  cd "$1"
+}
+
+
 # Machine-specific configuration (not tracked in git)
 # Create ~/.zshrc.local for machine-specific settings like:
 #   - Custom PATH additions (e.g., postgresql, mongodb, python versions)

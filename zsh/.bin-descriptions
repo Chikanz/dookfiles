@@ -102,3 +102,4 @@ view:Quick file viewer
 vimplug:Manage vim plugins
 waitfor:Wait for command to succeed
 wifi:Manage WiFi connections
+mkcd:Make directory and cd into it

@@ -67,6 +67,7 @@ pingbing:Ping Bing to check internet connectivity
 pingen:Generate random ping sound
 pix:Image viewer/converter
 prettypath:Display PATH variable nicely formatted
+push:Upload local directory to remote server (usage: push ./myfiles user@host [/path] - defaults to ~/)
 qtas2m4as:Convert QTA audio to M4A
 radio:Stream internet radio stations
 removeexif:Remove EXIF data from images
@@ -99,7 +100,9 @@ url:URL shortener/expander
 url2md:Convert URL to Markdown link
 uuid:Generate UUID
 view:Quick file viewer
+mkcd:Make directory and cd into it
 vimplug:Manage vim plugins
 waitfor:Wait for command to succeed
 wifi:Manage WiFi connections
-mkcd:Make directory and cd into it
+yoink:Download files from remote server to current directory (usage: yoink /remote/path user@host)
+

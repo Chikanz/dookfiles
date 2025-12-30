@@ -204,6 +204,7 @@ alias ls='ls --color=auto'
 alias rm='trash'
 alias rmdir='trash'
 alias mkdir='mkcd'
+alias reallyrm='rm'
 
 mkcd () {
   \mkdir -p "$1"

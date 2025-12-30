@@ -14,9 +14,9 @@ for file in "$@"; do
   if [[ -e "$file" ]]; then
     if [[ -d "$file" ]]; then
       # Add directory and all its contents
-      while IFS= read -r -d '' item; do
+      while IFS= read -r item; do
         all_files+=("$item")
-      done < <(find "$file" -print0 | sort -z)
+      done < <(find "$file" -type f -o -type d | sort)
     else
       all_files+=("$file")
     fi

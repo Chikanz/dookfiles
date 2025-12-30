@@ -189,14 +189,21 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   alias wstorm='open -na "WebStorm.app" --args "$@"'
 fi
 
+#Typos
 alias ,,='cd ..'
 alias ..l='cd .. && ls'
 alias :q='exit'
 alias cd..='cd ..'
-alias mdkir='mkdir'
+alias mdkir='mkcd'
 alias dc='cd'
-alias sl='ls'
+alias sl='ls --color=auto'
 alias sudp='sudo'
+alias ls='ls --color=auto'
+
+# Safe delete to trash + make and cd instead of mkdir
+alias rm='trash'
+alias rmdir='trash'
+alias mkdir='mkcd'
 
 mkcd () {
   \mkdir -p "$1"

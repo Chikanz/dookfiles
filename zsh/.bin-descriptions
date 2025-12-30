@@ -56,6 +56,7 @@ nato:Convert text to NATO phonetic alphabet
 note:Quick note-taking utility
 note-archive:Archive old notes
 notify:Send desktop notification
+nuke:Permanently delete files with confirmation prompt
 npm-repack:Reinstall npm packages
 npm-unused:Find unused npm packages
 npm-update-dependencies:Update npm dependencies

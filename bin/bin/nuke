@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -e
+set -u
+set -o pipefail
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: nuke <file>..." >&2
+  exit 1
+fi
+
+echo "Files to be deleted:"
+all_files=()
+for file in "$@"; do
+  if [[ -e "$file" ]]; then
+    if [[ -d "$file" ]]; then
+      # Add directory and all its contents
+      while IFS= read -r -d '' item; do
+        all_files+=("$item")
+      done < <(find "$file" -print0 | sort -z)
+    else
+      all_files+=("$file")
+    fi
+  else
+    all_files+=("$file (does not exist)")
+  fi
+done
+
+# Display up to 20 items
+count=0
+for item in "${all_files[@]}"; do
+  if [[ $count -lt 20 ]]; then
+    echo "  - $item"
+    ((count++))
+  else
+    break
+  fi
+done
+
+if [[ ${#all_files[@]} -gt 20 ]]; then
+  echo "  ... and $((${#all_files[@]} - 20)) more items"
+fi
+
+echo -n $'\nAre you sure? (y/N) '
+read -r response
+if [[ "$response" =~ ^[Yy]$ ]]; then
+  rm -rf "$@"
+else
+  echo "Cancelled."
+fi

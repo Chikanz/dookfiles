@@ -1,10 +1,24 @@
 #!/bin/bash
 
-# Usage: ./convertall <source_extension> <target_extension>
+# Usage: ./convertall [-R] [-T] <source_extension> <target_extension>
+#        ./convertall [-R] [-T] <source_extension> h265
+
+RECURSIVE=false
+TRASH=false
+
+while [[ "$1" == -* ]]; do
+    case "$1" in
+        -R) RECURSIVE=true; shift ;;
+        -T) TRASH=true; shift ;;
+        *) echo "Unknown flag: $1"; exit 1 ;;
+    esac
+done
 
 if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <source_extension> <target_extension>"
+    echo "Usage: $0 [-R] [-T] <source_extension> <target_extension>"
     echo "Example: $0 HEIC png"
+    echo "         $0 -R HEIC png"
+    echo "         $0 -T mov h265"
     exit 1
 fi
 
@@ -15,8 +29,18 @@ TARGET_EXT="$2"
 SOURCE_EXT="${SOURCE_EXT#.}"
 TARGET_EXT="${TARGET_EXT#.}"
 
+H265_MODE=false
+if [[ "$(echo "$TARGET_EXT" | tr '[:upper:]' '[:lower:]')" == "h265" ]]; then
+    H265_MODE=true
+    TARGET_EXT="mp4"
+fi
+
 # Count files (case-insensitive)
-file_count=$(find . -maxdepth 1 -type f -iname "*.${SOURCE_EXT}" | wc -l | tr -d ' ')
+if $RECURSIVE; then
+    file_count=$(find . -type f -iname "*.${SOURCE_EXT}" | wc -l | tr -d ' ')
+else
+    file_count=$(find . -maxdepth 1 -type f -iname "*.${SOURCE_EXT}" | wc -l | tr -d ' ')
+fi
 
 if [ "$file_count" -eq 0 ]; then
     echo "No .${SOURCE_EXT} files found in current directory"
@@ -24,35 +48,81 @@ if [ "$file_count" -eq 0 ]; then
 fi
 
 echo "Found $file_count .${SOURCE_EXT} file(s)"
-echo "Converting to .${TARGET_EXT}..."
+if $H265_MODE; then
+    echo "Converting to H.265 (.mp4) via Apple VideoToolbox..."
+else
+    echo "Converting to .${TARGET_EXT}..."
+fi
 echo ""
 
 converted=0
 failed=0
 
-# Use find to get files case-insensitively
+trash_file() {
+    local f="$1"
+    if command -v trash &> /dev/null; then
+        trash "$f"
+    else
+        rm "$f"
+    fi
+}
+
 while IFS= read -r -d '' file; do
-    # Get filename without extension
     basename="${file%.*}"
-    target="${basename}.${TARGET_EXT}"
+
+    # Avoid overwriting source when input/output extensions are the same
+    if $H265_MODE && [[ "$(echo "${SOURCE_EXT}" | tr '[:upper:]' '[:lower:]')" == "mp4" ]]; then
+        target="${basename}_h265.${TARGET_EXT}"
+    else
+        target="${basename}.${TARGET_EXT}"
+    fi
 
     echo "Converting: $file -> $target"
 
-    # Try magick (ImageMagick 7) first, fall back to convert (ImageMagick 6), then ffmpeg
-    if command -v magick &> /dev/null; then
-        magick "$file" "$target" 2>/dev/null && ((converted++)) || ((failed++))
-    elif command -v convert &> /dev/null; then
-        convert "$file" "$target" 2>/dev/null && ((converted++)) || ((failed++))
-    elif command -v ffmpeg &> /dev/null; then
-        ffmpeg -i "$file" "$target" -loglevel error -y 2>/dev/null && ((converted++)) || ((failed++))
+    success=false
+
+    if $H265_MODE; then
+        if command -v ffmpeg &> /dev/null; then
+            ffmpeg -y -loglevel error -i "$file" \
+                -c:v hevc_videotoolbox -q:v 65 -tag:v hvc1 \
+                -c:a aac \
+                "$target" </dev/null
+            if [ $? -eq 0 ]; then
+                success=true
+            else
+                echo "  Error: failed to convert $file (ffmpeg with hevc_videotoolbox)"
+            fi
+        else
+            echo "  Error: ffmpeg not found"
+        fi
     else
-        echo "Error: Neither ImageMagick nor ffmpeg found. Install one of them first."
-        echo "  macOS: brew install imagemagick  or  brew install ffmpeg"
-        exit 1
+        if command -v magick &> /dev/null && magick "$file" "$target" 2>/dev/null; then
+            success=true
+        elif command -v convert &> /dev/null && convert "$file" "$target" 2>/dev/null; then
+            success=true
+        elif command -v ffmpeg &> /dev/null && ffmpeg -y -loglevel error -i "$file" "$target" </dev/null 2>/dev/null; then
+            success=true
+        fi
+
+        if ! $success; then
+            echo "  Error: failed to convert $file (tried magick, convert, ffmpeg)"
+        fi
     fi
-done < <(find . -maxdepth 1 -type f -iname "*.${SOURCE_EXT}" -print0)
+
+    if $success; then
+        ((converted++))
+        if $TRASH; then
+            trash_file "$file"
+        fi
+    else
+        ((failed++))
+    fi
+done < <(if $RECURSIVE; then find . -type f -iname "*.${SOURCE_EXT}" -print0; else find . -maxdepth 1 -type f -iname "*.${SOURCE_EXT}" -print0; fi)
 
 echo ""
 echo "Conversion complete!"
 echo "Converted: $converted"
+if $TRASH && [ "$converted" -gt 0 ]; then
+    echo "Trashed originals: $converted"
+fi
 echo "Failed: $failed"

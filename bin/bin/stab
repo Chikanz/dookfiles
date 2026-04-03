@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# Usage: stabilize [preset] [options] input.mp4 [output.mp4]
+# Presets: mild, moderate, heavy, extreme
+# Options:
+#   -s, --smoothing   Smoothing value (default: 30)
+#   -z, --zoom        Zoom percentage (default: 5)
+#   -k, --shakiness   Shakiness 1-10 (default: 10)
+#   -a, --accuracy    Accuracy 1-15 (default: 15)
+
+SMOOTHING=30
+ZOOM=5
+SHAKINESS=10
+ACCURACY=15
+
+apply_preset() {
+  case $1 in
+    mild)     SMOOTHING=10; ZOOM=2;  SHAKINESS=5;  ACCURACY=10 ;;
+    moderate) SMOOTHING=30; ZOOM=5;  SHAKINESS=7;  ACCURACY=12 ;;
+    heavy)    SMOOTHING=60; ZOOM=10; SHAKINESS=10; ACCURACY=15 ;;
+    extreme)  SMOOTHING=100;ZOOM=15; SHAKINESS=10; ACCURACY=15 ;;
+    *) echo "Unknown preset: $1. Options: mild, moderate, heavy, extreme"; exit 1 ;;
+  esac
+}
+
+# Check if first arg is a preset
+if [[ "$1" =~ ^(mild|moderate|heavy|extreme)$ ]]; then
+  apply_preset "$1"
+  shift
+fi
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -s|--smoothing) SMOOTHING="$2"; shift 2 ;;
+    -z|--zoom)      ZOOM="$2";      shift 2 ;;
+    -k|--shakiness) SHAKINESS="$2"; shift 2 ;;
+    -a|--accuracy)  ACCURACY="$2";  shift 2 ;;
+    -*) echo "Unknown option: $1"; exit 1 ;;
+    *)  break ;;
+  esac
+done
+
+INPUT="$1"
+OUTPUT="${2:-${INPUT%.*}_stabilized.${INPUT##*.}}"
+
+if [[ -z "$INPUT" ]]; then
+  echo "Usage: stabilize [preset] [options] input.mp4 [output.mp4]"
+  echo "Presets: mild, moderate, heavy, extreme"
+  exit 1
+fi
+
+TRF=$(mktemp /tmp/transform.XXXXXX.trf)
+trap "rm -f $TRF" EXIT
+
+echo "Settings: smoothing=${SMOOTHING} zoom=${ZOOM} shakiness=${SHAKINESS} accuracy=${ACCURACY}"
+echo "Analyzing: $INPUT"
+ffmpeg -i "$INPUT" -vf "vidstabdetect=shakiness=${SHAKINESS}:accuracy=${ACCURACY}:result=${TRF}" -f null - && \
+echo "Stabilizing -> $OUTPUT" && \
+ffmpeg -i "$INPUT" -vf "vidstabtransform=smoothing=${SMOOTHING}:zoom=${ZOOM}:input=${TRF}" -c:a copy "$OUTPUT"

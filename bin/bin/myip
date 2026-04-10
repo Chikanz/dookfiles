@@ -17,6 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="get your IP address")
     parser.add_argument(
         "desired",
+
         nargs="+",
         choices=["local", "l", "global", "g", "gl", "lg"],
         help="what kind of IP do you want?",
@@ -38,7 +39,9 @@ def parse_args():
 
 
 def local_ip():
-    return socket.gethostbyname(socket.gethostname())
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
 
 
 def global_ip():

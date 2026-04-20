@@ -201,7 +201,6 @@ alias sudp='sudo'
 alias ls='ls --color=auto'
 
 # Safe delete to trash + make and cd instead of mkdir
-alias rm='trash'
 alias rmdir='trash'
 alias mkdir='mkcd'
 alias nuke='rm -i'

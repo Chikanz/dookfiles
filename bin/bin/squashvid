@@ -11,7 +11,7 @@ set -euo pipefail
 
 # --- Configuration ---
 # Hardware mode (VideoToolbox) settings
-VT_QUALITY=63              # -q:v value for VideoToolbox (1-100, higher = better quality, ~65 matches CRF 23 x264)
+VT_QUALITY=60              # -q:v value for VideoToolbox (1-100, higher = better quality, ~65 matches CRF 23 x264)
 BITRATE_RATIO=0.55         # Target this fraction of source bitrate (0.55 = 55%, good for equivalent HEVC quality)
 
 # Software mode (libx265) settings
@@ -38,6 +38,29 @@ NC='\033[0m'
 log()  { echo -e "${GREEN}[squashvid]${NC} $*"; }
 warn() { echo -e "${YELLOW}[squashvid]${NC} $*"; }
 err()  { echo -e "${RED}[squashvid]${NC} $*" >&2; }
+
+BAR_WIDTH=40
+
+get_duration_secs() {
+    local file="$1"
+    ffprobe -v quiet -show_entries format=duration \
+        -of default=noprint_wrappers=1:nokey=1 "$file" 2>/dev/null
+}
+
+draw_progress() {
+    local pct="$1" elapsed="$2" eta="$3"
+    local filled=$(( pct * BAR_WIDTH / 100 ))
+    local empty=$(( BAR_WIDTH - filled ))
+    local bar=""
+    for ((j=0; j<filled; j++)); do bar+="█"; done
+    for ((j=0; j<empty; j++)); do bar+="▒"; done
+    printf "\r  ${CYAN}%s${NC} %3d%% ${DIM}elapsed %s eta %s${NC}" "$bar" "$pct" "$elapsed" "$eta"
+}
+
+format_duration() {
+    local secs="$1"
+    printf "%dm%02ds" $((secs / 60)) $((secs % 60))
+}
 
 usage() {
     echo -e "${BOLD}squashvid${NC} - Convert H.264 videos to H.265/HEVC at equivalent quality"
@@ -184,6 +207,18 @@ estimate_source_crf() {
     echo "$estimated_crf" | awk '{ v=$1; if(v<10) v=10; if(v>40) v=40; printf "%.0f", v }'
 }
 
+# Map container extension to one that supports HEVC
+output_ext_for() {
+    local ext
+    ext=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+    case "$ext" in
+        m4v|3gp|3g2|flv|wmv|avi)
+            echo "mp4" ;;
+        *)
+            echo "$ext" ;;
+    esac
+}
+
 get_video_codec() {
     local file="$1"
     ffprobe -v quiet -select_streams v:0 -show_entries stream=codec_name \
@@ -318,7 +353,8 @@ for file in "${files[@]}"; do
         continue
     fi
 
-    output_file="${basename_no_ext}${OUTPUT_SUFFIX}.${EXT}"
+    out_ext=$(output_ext_for "$EXT")
+    output_file="${basename_no_ext}${OUTPUT_SUFFIX}.${out_ext}"
     if [[ -f "$output_file" ]]; then
         echo -e "  ${DIM}⊘ Skipping ${file} (output already exists)${NC}"
         continue
@@ -407,7 +443,8 @@ for i in "${!to_convert[@]}"; do
     file="${to_convert[$i]}"
     param="${encode_params[$i]}"
     basename_no_ext="${file%.*}"
-    output_file="${basename_no_ext}${OUTPUT_SUFFIX}.${EXT}"
+    out_ext=$(output_ext_for "$EXT")
+    output_file="${basename_no_ext}${OUTPUT_SUFFIX}.${out_ext}"
 
     if [[ "$USE_SOFTWARE" == false ]]; then
         # --- GPU encode with VideoToolbox ---
@@ -452,7 +489,47 @@ for i in "${!to_convert[@]}"; do
         )
     fi
 
-    if ffmpeg "${ffmpeg_args[@]}" 2>&1 | tail -1; then
+    # Get duration for progress bar
+    total_dur=$(get_duration_secs "$file")
+    start_time=$(date +%s)
+
+    # Run ffmpeg with progress output, parse in real-time
+    ffmpeg_log=$(mktemp)
+    set +eo pipefail
+    ffmpeg -nostdin -progress pipe:1 "${ffmpeg_args[@]}" 2>"$ffmpeg_log" | while IFS= read -r line; do
+        if [[ "$line" =~ ^out_time_ms= ]]; then
+            current_us="${line#out_time_ms=}"
+            if [[ -n "$total_dur" && "$total_dur" != "N/A" && -n "$current_us" && "$current_us" != "N/A" ]]; then
+                current_s=$(echo "scale=2; $current_us / 1000000" | bc 2>/dev/null)
+                pct=$(echo "scale=0; $current_s * 100 / $total_dur" | bc 2>/dev/null)
+                (( pct > 100 )) && pct=100
+                now=$(date +%s)
+                elapsed=$(( now - start_time ))
+                if (( pct > 0 )); then
+                    eta=$(( elapsed * (100 - pct) / pct ))
+                else
+                    eta=0
+                fi
+                draw_progress "$pct" "$(format_duration $elapsed)" "$(format_duration $eta)"
+            fi
+        elif [[ "$line" == "progress=end" ]]; then
+            now=$(date +%s)
+            elapsed=$(( now - start_time ))
+            draw_progress 100 "$(format_duration $elapsed)" "0m00s"
+            echo ""
+        fi
+    done
+    set -eo pipefail
+    # Check if ffmpeg succeeded by examining the output file
+    if [[ -f "$output_file" && -s "$output_file" ]]; then
+        ffmpeg_rc=0
+    else
+        ffmpeg_rc=1
+    fi
+    ffmpeg_output=$(cat "$ffmpeg_log")
+    rm -f "$ffmpeg_log"
+
+    if [[ $ffmpeg_rc -eq 0 ]]; then
         src_size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null)
         dst_size=$(stat -f%z "$output_file" 2>/dev/null || stat -c%s "$output_file" 2>/dev/null)
         saved=$(( src_size - dst_size ))
@@ -469,7 +546,9 @@ for i in "${!to_convert[@]}"; do
         fi
         (( success++ ))
     else
-        err "✗ Failed to encode ${file}"
+        err "✗ Failed to encode ${file} (exit code ${ffmpeg_rc})"
+        err "ffmpeg output:"
+        echo "$ffmpeg_output" >&2
         rm -f "$output_file"
         (( failed++ ))
     fi

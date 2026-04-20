@@ -1,0 +1,185 @@
+#!/bin/bash
+set -euo pipefail
+
+# vidcompare - Compare two videos side by side using ffmpeg
+# Plays both videos simultaneously in a split-screen view for quality comparison.
+#
+# Usage: vidcompare <video1> <video2> [options]
+# Example: vidcompare original.mp4 compressed.mp4
+#          vidcompare a.mp4 b.mp4 --zoom 2 --start 30
+
+# --- Defaults ---
+ZOOM=2          # Zoom factor applied to both videos (e.g. 2 = 2x zoom on crop area)
+START_TIME=""   # Optional start time (seconds or HH:MM:SS)
+LABEL_A=""      # Label for left video (defaults to filename)
+LABEL_B=""      # Label for right video (defaults to filename)
+FONT_SIZE=28    # Label font size
+NO_AUDIO=false  # Mute output
+
+# --- Colors ---
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
+NC='\033[0m'
+
+log()  { echo -e "${GREEN}[vidcompare]${NC} $*"; }
+warn() { echo -e "${YELLOW}[vidcompare]${NC} $*"; }
+err()  { echo -e "${RED}[vidcompare]${NC} $*" >&2; }
+
+usage() {
+    echo -e "${BOLD}vidcompare${NC} - Compare two videos side by side"
+    echo ""
+    echo -e "${BOLD}Usage:${NC}"
+    echo "  vidcompare <video1> <video2> [options]"
+    echo ""
+    echo -e "${BOLD}Examples:${NC}"
+    echo "  vidcompare original.mp4 compressed.mp4"
+    echo "  vidcompare a.mp4 b.mp4 --zoom 2"
+    echo "  vidcompare a.mp4 b.mp4 --start 00:01:30"
+    echo "  vidcompare a.mp4 b.mp4 --label-a Original --label-b Compressed"
+    echo "  vidcompare a.mp4 b.mp4 --no-audio"
+    echo ""
+    echo -e "${BOLD}Options:${NC}"
+    echo "  --zoom <n>        Zoom into centre of each video (default: 1 = no zoom)"
+    echo "  --start <time>    Start playback at this timestamp (e.g. 30 or 00:01:30)"
+    echo "  --label-a <name>  Label for the left video (default: filename)"
+    echo "  --label-b <name>  Label for the right video (default: filename)"
+    echo "  --font-size <n>   Label font size (default: 28)"
+    echo "  --no-audio        Mute audio output"
+    echo "  --help            Show this help message"
+    exit 0
+}
+
+check_deps() {
+    for cmd in ffmpeg ffplay ffprobe; do
+        if ! command -v "$cmd" &>/dev/null; then
+            err "$cmd is required but not installed."
+            err "Install with: brew install ffmpeg"
+            exit 1
+        fi
+    done
+}
+
+get_video_size() {
+    local file="$1" field="$2"
+    ffprobe -v quiet -select_streams v:0 \
+        -show_entries "stream=${field}" \
+        -of default=noprint_wrappers=1:nokey=1 "$file" 2>/dev/null
+}
+
+# --- Parse arguments ---
+if [[ $# -lt 2 ]]; then
+    usage
+fi
+
+FILE_A="$1"
+FILE_B="$2"
+shift 2
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --zoom)       ZOOM="$2"; shift 2 ;;
+        --start)      START_TIME="$2"; shift 2 ;;
+        --label-a)    LABEL_A="$2"; shift 2 ;;
+        --label-b)    LABEL_B="$2"; shift 2 ;;
+        --font-size)  FONT_SIZE="$2"; shift 2 ;;
+        --no-audio)   NO_AUDIO=true; shift ;;
+        --help|-h)    usage ;;
+        -*)           err "Unknown option: $1"; usage ;;
+        *)            err "Unexpected argument: $1"; usage ;;
+    esac
+done
+
+check_deps
+
+# Validate input files
+for f in "$FILE_A" "$FILE_B"; do
+    if [[ ! -f "$f" ]]; then
+        err "File not found: $f"
+        exit 1
+    fi
+done
+
+# Default labels to filenames
+[[ -z "$LABEL_A" ]] && LABEL_A="$(basename "$FILE_A")"
+[[ -z "$LABEL_B" ]] && LABEL_B="$(basename "$FILE_B")"
+
+# Get dimensions of each video
+W_A=$(get_video_size "$FILE_A" width)
+H_A=$(get_video_size "$FILE_A" height)
+W_B=$(get_video_size "$FILE_B" width)
+H_B=$(get_video_size "$FILE_B" height)
+
+log "Left:  ${BOLD}${FILE_A}${NC} (${W_A}x${H_A})"
+log "Right: ${BOLD}${FILE_B}${NC} (${W_B}x${H_B})"
+
+# Use the smaller of the two heights as the output height so they match
+OUT_H=$(( H_A < H_B ? H_A : H_B ))
+OUT_W=$(( W_A < W_B ? W_A : W_B ))
+
+# Scale both videos to the same height, then crop to the same width
+# When zoom > 1, crop a central region then scale it up to OUT_WxOUT_H
+SCALE_FILTER_A="scale=${OUT_W}:${OUT_H}:force_original_aspect_ratio=increase,crop=${OUT_W}:${OUT_H}"
+SCALE_FILTER_B="scale=${OUT_W}:${OUT_H}:force_original_aspect_ratio=increase,crop=${OUT_W}:${OUT_H}"
+
+if (( $(echo "$ZOOM > 1" | bc -l) )); then
+    # Compute the cropped region (centred) before upscaling
+    CROP_W=$(echo "scale=0; $OUT_W / $ZOOM / 1" | bc)
+    CROP_H=$(echo "scale=0; $OUT_H / $ZOOM / 1" | bc)
+    # Make dimensions even (required by many codecs)
+    CROP_W=$(( (CROP_W / 2) * 2 ))
+    CROP_H=$(( (CROP_H / 2) * 2 ))
+    ZOOM_CROP="crop=${CROP_W}:${CROP_H},scale=${OUT_W}:${OUT_H}"
+    SCALE_FILTER_A="${SCALE_FILTER_A},${ZOOM_CROP}"
+    SCALE_FILTER_B="${SCALE_FILTER_B},${ZOOM_CROP}"
+    log "Zoom:  ${BOLD}${ZOOM}x${NC} (cropping ${CROP_W}x${CROP_H} → ${OUT_W}x${OUT_H})"
+fi
+
+# Label overlay (drawtext)
+LABEL_OPTS="fontsize=${FONT_SIZE}:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=6"
+LABEL_FILTER_A="drawtext=text='${LABEL_A}':${LABEL_OPTS}:x=20:y=20"
+LABEL_FILTER_B="drawtext=text='${LABEL_B}':${LABEL_OPTS}:x=20:y=20"
+
+# Build the full filter complex
+FILTER="[0:v]${SCALE_FILTER_A},${LABEL_FILTER_A}[left];[1:v]${SCALE_FILTER_B},${LABEL_FILTER_B}[right];[left][right]hstack=inputs=2[out]"
+
+TOTAL_W=$(( OUT_W * 2 ))
+
+log "Output: ${BOLD}${TOTAL_W}x${OUT_H}${NC} side-by-side"
+echo ""
+
+# Build ffplay command
+FFMPEG_ARGS=(
+    -filter_complex "$FILTER"
+    -map "[out]"
+)
+
+if [[ "$NO_AUDIO" == true ]]; then
+    FFMPEG_ARGS+=( -an )
+else
+    FFMPEG_ARGS+=( -map "0:a?" )
+fi
+
+# Seek to start time if provided
+START_ARGS=()
+if [[ -n "$START_TIME" ]]; then
+    START_ARGS=( -ss "$START_TIME" )
+    log "Starting at ${BOLD}${START_TIME}${NC}"
+fi
+
+log "Launching player... (press ${BOLD}Q${NC} or ${BOLD}ESC${NC} to quit)"
+echo ""
+
+# ffplay struggles with multiple -i inputs; pipe through ffmpeg instead
+ffmpeg -loglevel warning \
+    ${START_ARGS:+"${START_ARGS[@]}"} -i "$FILE_A" \
+    ${START_ARGS:+"${START_ARGS[@]}"} -i "$FILE_B" \
+    "${FFMPEG_ARGS[@]}" \
+    -c:v rawvideo -f nut - \
+| ffplay -loglevel warning \
+    -window_title "vidcompare: ${LABEL_A}  |  ${LABEL_B}" \
+    -x "$TOTAL_W" -y "$OUT_H" \
+    -

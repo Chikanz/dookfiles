@@ -204,6 +204,8 @@ alias ls='ls --color=auto'
 alias rmdir='trash'
 alias mkdir='mkcd'
 alias nuke='rm -i'
+alias dookbox='et -c "tmux -CC new -A -s main" dookbox'
+alias mini='et -c "tmux -CC new -A -s main" mini'
 
 mkcd () {
   \mkdir -p "$1"
